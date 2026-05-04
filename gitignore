@@ -1,0 +1,21 @@
+# Environment & API Keys
+.env
+
+# Vector Database (ข้อมูลบริษัท — ห้าม push ขึ้น Git)
+hr_vector_db/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

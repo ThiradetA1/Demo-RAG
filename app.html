@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Document Assistant</title>
+    <style>
+        /* ==========================================
+           1. ตั้งค่า CSS (Theme สะอาดตาแบบ Streamlit)
+           ========================================== */
+        :root {
+            --bg-color: #ffffff;
+            --sidebar-bg: #f8f9fa;
+            --text-color: #31333F;
+            --primary-color: #2e6bf0; /* เปลี่ยนสีเป็นน้ำเงินให้ดูเป็นทางการขึ้น */
+            --border-color: #e6e6e6;
+            --user-msg-bg: #e3f2fd;
+            --bot-msg-bg: #f9f9f9;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ---- Sidebar ---- */
+        .sidebar {
+            width: 300px;
+            background-color: var(--sidebar-bg);
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 { margin-top: 0; font-size: 1.2rem; }
+        .sidebar p { margin: 5px 0; font-size: 0.9rem; }
+        .divider { height: 1px; background-color: #dcdcdc; margin: 20px 0; }
+        
+        .example-btn {
+            background-color: white;
+            border: 1px solid #dcdcdc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .example-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+        .clear-btn {
+            background-color: transparent;
+            border: 1px solid #dcdcdc;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            color: #555;
+        }
+        .clear-btn:hover { background-color: #e6e6e6; }
+        .caption { font-size: 0.8rem; color: #888; text-align: center; margin-top: 10px; }
+
+        /* ---- Main Content ---- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 40px;
+            box-sizing: border-box;
+        }
+
+        .header { padding: 30px 0 10px 0; }
+        .header h1 { margin: 0; font-size: 2rem; }
+        .header p { color: #666; margin-top: 5px; }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---- Chat Messages ---- */
+        .message { display: flex; margin-bottom: 20px; max-width: 85%; }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.bot { align-self: flex-start; }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px; /* เปลี่ยนจากวงกลมเป็นสี่เหลี่ยมมน */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin: 0 10px;
+        }
+        .message.user .avatar { background-color: var(--primary-color); color: white; }
+        .message.bot .avatar { background-color: #4caf50; color: white; }
+
+        .bubble {
+            padding: 15px;
+            border-radius: 10px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .message.user .bubble { background-color: var(--user-msg-bg); border-top-right-radius: 0; }
+        .message.bot .bubble { background-color: var(--bot-msg-bg); border: 1px solid var(--border-color); border-top-left-radius: 0; }
+
+        /* ---- Expander (Sources) ---- */
+        details {
+            margin-top: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 0.85rem;
+        }
+        summary { cursor: pointer; font-weight: bold; color: #555; outline: none; }
+        .source-item { margin: 5px 0; color: #666; }
+
+        /* ---- Input Area ---- */
+        .input-area { padding: 20px 0; background-color: var(--bg-color); }
+        .input-form {
+            display: flex;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .input-form input { flex: 1; padding: 15px; border: none; outline: none; font-size: 1rem; }
+        .input-form button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .input-form button:hover { background-color: #1c4baf; }
+        .input-form button:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>📄 AI Document Assistant</h2>
+        <p><strong>ระบบ:</strong> Document Q&A v2.0</p>
+        <div class="divider"></div>
+
+        <h3>📌 ตัวอย่างคำถาม</h3>
+        <button class="example-btn" onclick="setInput('สรุปใจความสำคัญของเอกสารนี้ให้หน่อย')">สรุปใจความสำคัญของเอกสารนี้</button>
+        <button class="example-btn" onclick="setInput('เอกสารนี้พูดถึงเงื่อนไขหรือข้อจำกัดอะไรบ้าง?')">เงื่อนไขและข้อจำกัดที่ระบุ?</button>
+        <button class="example-btn" onclick="setInput('มีตัวเลข สถิติ หรือวันที่อะไรที่สำคัญในเอกสารนี้ไหม?')">ตัวเลขและสถิติที่สำคัญ?</button>
+        <button class="example-btn" onclick="setInput('ข้อควรระวังที่ระบุไว้คืออะไร?')">ข้อควรระวังที่ระบุไว้?</button>
+        
+        <div class="divider"></div>
+        <button class="clear-btn" onclick="clearChat()">🗑️ ล้างประวัติการแชท</button>
+        <p class="caption">คำตอบอ้างอิงจากเนื้อหาในไฟล์ PDF ที่บันทึกไว้ในระบบเท่านั้น</p>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>📄 PDF Document Q&A</h1>
+            <p>พิมพ์คำถามเพื่อให้ AI ช่วยค้นหาและวิเคราะห์ข้อมูลจากเอกสารของคุณ</p>
+        </div>
+
+        <div class="chat-container" id="chat-container">
+            </div>
+        
+        <div class="typing-indicator" id="typing-indicator">
+            🔍 กำลังอ่านเอกสารและประมวลผลคำตอบ...
+        </div>
+
+        <div class="input-area">
+            <form class="input-form" onsubmit="handleSend(event)">
+                <input type="text" id="user-input" placeholder="ตัวอย่าง: เอกสารนี้สรุปว่าอย่างไร?" autocomplete="off">
+                <button type="submit" id="send-btn">ส่ง</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInputBox = document.getElementById('user-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const sendBtn = document.getElementById('send-btn');
+        
+        // ชี้ไปยัง Endpoint แบบปกติ (Non-streaming) ของ FastAPI
+        const API_URL = "http://localhost:8000/chat"; 
+
+        const welcomeMessage = "สวัสดีครับ! 👋 ผมคือ AI ผู้ช่วยวิเคราะห์เอกสาร\n\nคุณสามารถตั้งคำถามเกี่ยวกับข้อมูลที่อยู่ใน PDF ได้เลยครับ ผมจะไปค้นหาและสรุปมาให้";
+        let chatHistory = []; 
+
+        window.onload = () => {
+            appendMessage('bot', welcomeMessage);
+        };
+
+        function setInput(text) {
+            userInputBox.value = text;
+            userInputBox.focus();
+        }
+
+        function clearChat() {
+            chatContainer.innerHTML = '';
+            chatHistory = [];
+            appendMessage('bot', welcomeMessage);
+        }
+
+        function appendMessage(role, text, sources = []) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerText = role === 'user' ? '👤' : '🤖';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            
+            // แปลง **ข้อความ** เป็น HTML แบบง่ายๆ
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            bubble.innerHTML = formattedText;
+
+            // แสดงเอกสารอ้างอิง
+            if (sources && sources.length > 0) {
+                const details = document.createElement('details');
+                const summary = document.createElement('summary');
+                summary.innerText = '📄 ดูเอกสารอ้างอิง';
+                details.appendChild(summary);
+
+                sources.forEach((src, index) => {
+                    const p = document.createElement('p');
+                    p.className = 'source-item';
+                    p.innerHTML = `<strong>[${index + 1}]</strong> ${src}`;
+                    details.appendChild(p);
+                });
+                bubble.appendChild(details);
+            }
+
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(bubble);
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function handleSend(event) {
+            event.preventDefault();
+            const text = userInputBox.value.trim();
+            if (!text) return;
+
+            // แสดงข้อความผู้ใช้
+            appendMessage('user', text);
+            userInputBox.value = '';
+            userInputBox.disabled = true;
+            sendBtn.disabled = true;
+            
+            typingIndicator.style.display = 'block';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            try {
+                // ส่งข้อมูลไปที่ FastAPI (แนบประวัติการแชทไปด้วย)
+                const recentHistory = chatHistory.slice(-6);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        input: text,
+                        history: recentHistory
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                typingIndicator.style.display = 'none';
+                
+                // แสดงคำตอบจาก AI
+                appendMessage('bot', data.answer, data.sources);
+
+                // บันทึกความจำ
+                chatHistory.push({ role: 'user', content: text });
+                chatHistory.push({ role: 'assistant', content: data.answer });
+
+            } catch (error) {
+                console.error("Error:", error);
+                typingIndicator.style.display = 'none';
+                appendMessage('bot', `⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}`);
+            } finally {
+                userInputBox.disabled = false;
+                sendBtn.disabled = false;
+                userInputBox.focus();
+            }
+        }
+    </script>
+</body>
+</html>
