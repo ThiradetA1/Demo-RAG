@@ -8,12 +8,13 @@ AI Chatbot สำหรับตอบคำถามพนักงานเก
 
 ```
 project/
-├── app.py              # Streamlit Web App (ตัวหลัก)
+├── app.html              #  Web App (ตัวหลัก)
 ├── create_db.py        # สร้าง/อัปเดต Vector Database จาก PDF
 ├── view_db.py          # ดูข้อมูลใน Database (สำหรับ debug)
 ├── requirements.txt    # Python dependencies (pinned versions)
 ├── .env.example        # ตัวอย่างไฟล์ config (คัดลอกเป็น .env)
 ├── .gitignore          # ป้องกัน API Key และ DB หลุดขึ้น Git
+├── api.py              # สร้าง API เชื่อม HTML
 └── documents/          # 📁 วางไฟล์ PDF ที่นี่ (สร้างโฟลเดอร์เอง)
 ```
 
@@ -60,7 +61,7 @@ python create_db.py
 ### 5. รัน Web App
 
 ```bash
-streamlit run app.py
+uvicorn api:app --reload
 ```
 
 เปิดเบราว์เซอร์ไปที่ `http://localhost:8501`
@@ -73,7 +74,7 @@ streamlit run app.py
 |--------|---------|
 | `python create_db.py` | เพิ่มไฟล์ PDF ใหม่เข้า DB |
 | `python view_db.py` | ดูว่า DB มีข้อมูลอะไรบ้าง |
-| `streamlit run app.py` | เปิด Web App |
+| `uvicorn api:app --reload` | เปิด Web App |
 
 ---
 
