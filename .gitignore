@@ -1,21 +1,21 @@
-# Environment & API Keys
-.env
-
-# Vector Database (ข้อมูลบริษัท — ห้าม push ขึ้น Git)
-hr_vector_db/
-
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
+*$py.class
 .venv/
 venv/
-env/
+ENV/
 
-# OS
-.DS_Store
-Thumbs.db
+# API Keys & Secrets (สำคัญมาก)
+.env
 
-# IDE
+# RAG Data & Databases
+# ป้องกันฐานข้อมูล Vector หลุดไปบน Git
+document_vector_db/
+chroma_db/
+*.pdf
+
+# Editor settings
 .vscode/
 .idea/
+.DS_Store
