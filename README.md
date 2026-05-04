@@ -1,6 +1,6 @@
-# 🤖 HR & IT Helpdesk Copilot
+# DEMO Copilot
 
-AI Chatbot สำหรับตอบคำถามพนักงานเกี่ยวกับนโยบาย HR และคู่มือ IT โดยใช้ข้อมูลจากเอกสาร PDF ของบริษัท
+AI Chatbot สำหรับตอบคำถามในไฟล์ PDF 
 
 ---
 
